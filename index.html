@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Entry Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #e2e8f0;
+    }
+
+    .container {
+      background: rgba(30, 41, 59, 0.9);
+      padding: 25px 20px;
+      border-radius: 18px;
+      text-align: center;
+      width: 360px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 18px;
+    }
+
+    #reader {
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    #result {
+      font-size: 16px;
+      font-weight: 500;
+      padding: 12px;
+      border-radius: 10px;
+      background: #334155;
+      transition: all 0.3s ease;
+    }
+
+    .success {
+      background: #16a34a !important;
+      color: white;
+    }
+
+    .error {
+      background: #dc2626 !important;
+      color: white;
+    }
+
+    .neutral {
+      background: #334155;
+    }
+
+    .footer {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>QR Entry Scanner</h2>
+  <div class="subtitle">Scan student ID to log attendance</div>
+
+  <div id="reader" style="width:100%"></div>
+
+  <div id="result" class="neutral">Waiting for scan...</div>
+
+  <div class="footer">Powered by QR Attendance System</div>
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmczH8nVwcFz2IDRg5aE9QHArKp42aVHJ8GriCyVGm5V3n-t_8LHzSYC1luffDXjiQ/exec";
+
+let lastScanTime = 0;
+
+function onScanSuccess(decodedText) {
+
+  const now = Date.now();
+  if (now - lastScanTime < 4000) return;
+
+  lastScanTime = now;
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify({ id: decodedText })
+  })
+  .then(res => res.text())
+  .then(data => {
+    const resultBox = document.getElementById("result");
+
+    resultBox.classList.remove("success", "error");
+
+    if (data.includes("SUCCESS")) {
+      resultBox.classList.add("success");
+    } else {
+      resultBox.classList.add("error");
+    }
+
+    resultBox.innerText = data;
+
+    // 🔥 AUTO RESET AFTER 3 SECONDS
+    setTimeout(() => {
+      resultBox.classList.remove("success", "error");
+      resultBox.classList.add("neutral");
+      resultBox.innerText = "Waiting for scan...";
+    }, 3000);
+  })
+  .catch(() => {
+    const resultBox = document.getElementById("result");
+    resultBox.classList.remove("success");
+    resultBox.classList.add("error");
+    resultBox.innerText = "Connection Error";
+  });
+}
+
+new Html5QrcodeScanner("reader", {
+  fps: 10,
+  qrbox: 250
+}).render(onScanSuccess);
+</script>
+
+</body>
+</html>

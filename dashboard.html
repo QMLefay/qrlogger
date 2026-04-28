@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Attendance Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 10px;
+      width: 30%;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #334155;
+    }
+
+    tr:nth-child(even) {
+      background: #2a3a50;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Attendance Dashboard</h1>
+
+<div class="stats">
+  <div class="card">
+    <h3>Total Logs</h3>
+    <p id="totalLogs">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Currently Inside</h3>
+    <p id="insideCount">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Last Scan</h3>
+    <p id="lastScan">-</p>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Time</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="logTable"></tbody>
+</table>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzmczH8nVwcFz2IDRg5aE9QHArKp42aVHJ8GriCyVGm5V3n-t_8LHzSYC1luffDXjiQ/exec";
+
+function loadData() {
+  // remove old script if exists
+  const oldScript = document.getElementById("jsonpScript");
+  if (oldScript) oldScript.remove();
+
+  const script = document.createElement("script");
+  script.id = "jsonpScript";
+  script.src = API_URL + "?callback=handleData";
+
+  document.body.appendChild(script);
+}
+
+function handleData(data) {
+  document.getElementById("totalLogs").innerText = data.length;
+
+  let inside = {};
+  let tableHTML = "";
+
+  data.forEach(log => {
+    inside[log.id] = log.status;
+
+    tableHTML += `
+      <tr>
+        <td>${log.id}</td>
+        <td>${log.name}</td>
+        <td>${new Date(log.time).toLocaleTimeString()}</td>
+        <td>${log.status}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("logTable").innerHTML = tableHTML;
+
+  let count = 0;
+  for (let id in inside) {
+    if (inside[id] === "IN") count++;
+  }
+
+  document.getElementById("insideCount").innerText = count;
+
+  if (data.length > 0) {
+    let last = data[data.length - 1];
+    document.getElementById("lastScan").innerText =
+      last.name + " (" + last.status + ")";
+  }
+}
+
+// load immediately
+loadData();
+
+// refresh every 5 sec
+setInterval(loadData, 5000);
+</script>
+
+</body>
+</html>
